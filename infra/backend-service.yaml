@@ -1,0 +1,55 @@
+# ─────────────────────────────────────────────────────────────
+# Roamora Backend — Cloud Run Service Configuration
+# Project: travel-planner-495705
+# ─────────────────────────────────────────────────────────────
+# Apply with:
+#   gcloud run services replace infra/backend-service.yaml \
+#     --region=asia-south1 --project=travel-planner-495705
+#
+# This file is the canonical source of truth for the backend
+# Cloud Run service spec. Use it for blue/green rollouts and
+# traffic management.
+
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: roamora-backend
+  labels:
+    app: roamora
+    component: backend
+  annotations:
+    run.googleapis.com/ingress: all
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/minScale: "0"
+        autoscaling.knative.dev/maxScale: "5"
+        run.googleapis.com/execution-environment: gen2
+    spec:
+      containerConcurrency: 80
+      timeoutSeconds: 60
+      containers:
+        - image: asia-docker.pkg.dev/travel-planner-495705/roamora/backend:latest
+          ports:
+            - containerPort: 8080
+          resources:
+            limits:
+              cpu: "1"
+              memory: 512Mi
+          env:
+            - name: PORT
+              value: "8080"
+          # Gemini API key injected from Secret Manager (never hardcode)
+          envFrom: []
+          volumeMounts:
+            - name: secret-gemini
+              mountPath: /secrets
+              readOnly: true
+      volumes:
+        - name: secret-gemini
+          secret:
+            secretName: GEMINI_API_KEY
+  traffic:
+    - percent: 100
+      latestRevision: true

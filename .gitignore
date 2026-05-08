@@ -1,0 +1,27 @@
+# Roamora root .gitignore
+
+# Environment secrets
+backend/.env
+**/.env
+**/.env.*
+!**/.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+venv/
+.venv/
+*.egg-info/
+
+# Node
+node_modules/
+.next/
+out/
+npm-debug.log*
+
+# Docker
+*.log
+
+# OS
+.DS_Store
+Thumbs.db

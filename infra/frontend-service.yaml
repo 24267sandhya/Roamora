@@ -1,0 +1,46 @@
+# ─────────────────────────────────────────────────────────────
+# Roamora Frontend — Cloud Run Service Configuration
+# Project: travel-planner-495705
+# ─────────────────────────────────────────────────────────────
+# Apply with:
+#   gcloud run services replace infra/frontend-service.yaml \
+#     --region=asia-south1 --project=travel-planner-495705
+
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: roamora-frontend
+  labels:
+    app: roamora
+    component: frontend
+  annotations:
+    run.googleapis.com/ingress: all
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/minScale: "0"
+        autoscaling.knative.dev/maxScale: "3"
+        run.googleapis.com/execution-environment: gen2
+    spec:
+      containerConcurrency: 80
+      timeoutSeconds: 30
+      containers:
+        - image: asia-docker.pkg.dev/travel-planner-495705/roamora/frontend:latest
+          ports:
+            - containerPort: 3000
+          resources:
+            limits:
+              cpu: "1"
+              memory: 512Mi
+          env:
+            - name: NODE_ENV
+              value: production
+            - name: PORT
+              value: "3000"
+            # Replace this with the actual backend Cloud Run URL after first deploy
+            - name: NEXT_PUBLIC_BACKEND_URL
+              value: "https://roamora-backend-REPLACE_ME.a.run.app"
+  traffic:
+    - percent: 100
+      latestRevision: true

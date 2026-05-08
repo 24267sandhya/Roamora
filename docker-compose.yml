@@ -1,0 +1,44 @@
+# docker-compose.yml — Roamora local development stack
+# Usage: docker-compose up --build
+#
+# This mirrors the Cloud Run production setup locally.
+# Secrets are loaded from backend/.env (never commit that file).
+
+version: "3.9"
+
+services:
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: roamora-backend
+    ports:
+      - "8080:8080"
+    environment:
+      - PORT=8080
+    env_file:
+      - ./backend/.env          # loads GEMINI_API_KEY locally
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - NEXT_PUBLIC_BACKEND_URL=http://backend:8080
+    container_name: roamora-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_BACKEND_URL=http://backend:8080
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
